@@ -1,0 +1,17 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Judson-Bold.ttf",
+      "sha1": "b7cec83c34191b6c6c1fa2715985411a9995d65d"
+    },
+    {
+      "path": "assets/fonts/Judson-Italic.ttf",
+      "sha1": "373658edf454ac6b577fda7a489c01064dbdee24"
+    },
+    {
+      "path": "assets/fonts/Judson-Regular.ttf",
+      "sha1": "b46d6c4175b15244b75ba2b73671972bedb828cf"
+    }
+  ]
+}
