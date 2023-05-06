@@ -1,9 +1,15 @@
 import {Formik} from 'formik';
 import React from 'react';
-import {ImageBackground, StyleSheet, Text, View} from 'react-native';
+import {Alert, ImageBackground, StyleSheet, Text, View} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
 import * as Yup from 'yup';
-import {firebase} from '../../firebase';
+import {fireAuth, fireStore} from '../lib/firebase';
+import {NavigationScreenProps, Routes} from '../types';
+import {
+  useCreateUserWithEmailAndPassword,
+  useSignInWithEmailAndPassword,
+} from 'react-firebase-hooks/auth';
+import {doc, setDoc} from 'firebase/firestore';
 
 const SignupSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Required'),
@@ -17,38 +23,42 @@ const SignupSchema = Yup.object().shape({
   ),
 });
 
-export const SignupScreen = ({navigation}) => {
-  const handleSignUp = ({
+export const SignupScreen = ({
+  navigation,
+}: NavigationScreenProps<Routes.Signup>) => {
+  const [createUserWithEmailAndPassword] =
+    useCreateUserWithEmailAndPassword(fireAuth);
+
+  const handleSignUp = async ({
     email,
     password,
   }: {
     email: string;
     password: string;
   }) => {
-    firebase
-      .auth()
-      .createUserWithEmailAndPassword(email, password)
-      .then(response => {
-        const uid = response.user.uid;
-        const data = {
-          id: uid,
-          email,
-        };
-        const usersRef = firebase.firestore().collection('users');
-        usersRef
-          .doc(uid)
-          .set(data)
-          .then(() => {
-            navigation.navigate('HomeScreen', {user: data});
-          })
-          .catch(error => {
-            alert(error);
-          });
-      })
-      .catch(error => {
-        alert(error);
+    const res = await createUserWithEmailAndPassword(email, password);
+    if (!res) {
+      Alert.alert('Error', 'Something went wrong', [{text: 'OK'}]);
+      return;
+    }
+
+    try {
+      const userRef = doc(fireStore, 'users', res.user.uid);
+      await setDoc(userRef, {
+        email: res.user.email,
+        uid: res.user.uid,
       });
+
+      Alert.alert('Success ✅', 'You are signed in!', [{text: 'OK'}]);
+      navigation.reset({
+        routes: [{name: Routes.Home}],
+        index: 0,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   };
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -123,7 +133,7 @@ export const SignupScreen = ({navigation}) => {
             textColor="#F7EDE2"
             style={styles.buttonSecondary}
             labelStyle={styles.buttonSecondaryLabel}
-            onPress={() => navigation.navigate('LoginScreen')}>
+            onPress={() => navigation.navigate(Routes.Login)}>
             Log in
           </Button>
         </View>
@@ -131,6 +141,7 @@ export const SignupScreen = ({navigation}) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

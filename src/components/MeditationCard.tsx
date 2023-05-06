@@ -1,9 +1,9 @@
 import React from 'react';
-import {Image, StyleSheet} from 'react-native';
+import {Alert, Image, StyleSheet} from 'react-native';
 import {Button, Card} from 'react-native-paper';
-import {Meditation} from '../screens/MainScreen';
+import {Meditation} from '../types';
 
-export const StyledCard = ({title, image, duration}: Meditation) => {
+export const MeditationCard = ({title, image, duration}: Meditation) => {
   const hours = Math.floor(duration / 3600);
   const minutes = Math.floor(duration / 60);
   const seconds = duration - hours * 3600 - minutes * 60;
@@ -23,7 +23,9 @@ export const StyledCard = ({title, image, duration}: Meditation) => {
         <Button
           mode="text"
           style={styles.favoriteIcon}
-          onPress={() => alert('ttt')}>
+          onPress={() => {
+            Alert.alert('To be implemented');
+          }}>
           <Image source={require('../../assets/images/heart.png')} />
         </Button>
       </Card.Actions>
@@ -56,11 +58,9 @@ const styles = StyleSheet.create({
     right: 0,
     border: 'none',
     zIndex: 1000,
-    // backgroundColor: '#ddd'
   },
   image: {
     marginTop: -16,
-    // position: 'absolute',
     zIndex: 1,
   },
 });

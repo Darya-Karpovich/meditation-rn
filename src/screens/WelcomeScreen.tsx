@@ -1,8 +1,11 @@
 import {ImageBackground, StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import {Button} from 'react-native-paper';
+import {NavigationScreenProps, Routes} from '../types';
 
-export const WelcomeScreen = ({navigation}) => {
+export const WelcomeScreen = ({
+  navigation,
+}: NavigationScreenProps<Routes.Welcome>) => {
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -17,7 +20,7 @@ export const WelcomeScreen = ({navigation}) => {
             textColor="#F7EDE2"
             labelStyle={styles.button}
             contentStyle={styles.buttonHeight}
-            onPress={() => navigation.navigate('LoginScreen')}>
+            onPress={() => navigation.navigate(Routes.Login)}>
             Log in
           </Button>
           <Button
@@ -26,7 +29,7 @@ export const WelcomeScreen = ({navigation}) => {
             textColor="#B75755"
             labelStyle={styles.button}
             contentStyle={styles.buttonHeight}
-            onPress={() => navigation.navigate('SignupScreen')}>
+            onPress={() => navigation.navigate(Routes.Signup)}>
             Sign up
           </Button>
         </View>
@@ -34,6 +37,7 @@ export const WelcomeScreen = ({navigation}) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

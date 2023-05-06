@@ -1,43 +1,29 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
-import {SegmentedButtons, Text, ToggleButton} from 'react-native-paper';
-import {StyledCard} from '../components/StyledCard';
-import {getDatabase, ref, onValue} from 'firebase/database';
+import {SegmentedButtons, Text} from 'react-native-paper';
+import {MeditationCard} from '../../components/MeditationCard';
+import {useCollectionData} from 'react-firebase-hooks/firestore';
+import {fireStore} from '../../lib/firebase';
+import {Query, collection} from 'firebase/firestore';
+import {Meditation} from '../../types';
 
-import {firebase} from '../../firebase';
+export const Home = () => {
+  const [currentTab, setCurrentTab] = useState('sound');
 
-// const meditations = [
-//   {title: 'Sea | 3 min', image: '../../assets/images/sea.jpg'},
-//   {title: 'Forest | 8 min', image: '../../assets/images/sea.jpg'},
-//   {title: 'Mountains | 12 min', image: '../../assets/images/sea.jpg'},
-// ];
-export type Meditation = {
-  title: string;
-  duration: number;
-  image: string;
-};
-export const MainScreen = () => {
-  const [value, setValue] = useState('sound');
-  const [meditations, setMeditations] = useState<Meditation[]>([]);
+  const [meditations] = useCollectionData<Meditation>(
+    collection(
+      fireStore,
+      currentTab === 'sound' ? 'audio-meditations' : 'video-meditations',
+    ) as Query<Meditation>,
+  );
 
-  useEffect(() => {
-    firebase
-      .firestore()
-      .collection(value === 'sound' ? 'audio-meditations' : 'video-meditations')
-      .get()
-      .then(querySnapshot => {
-        setMeditations(querySnapshot.docs.map(e => e.data()));
-      });
-    // setMeditations(data);
-  }, [value]);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Meditations</Text>
       <SegmentedButtons
-        value={value}
-        onValueChange={setValue}
+        value={currentTab}
+        onValueChange={setCurrentTab}
         theme={{roundness: 0, border: 'none', fontSize: 40}}
-        // style={styles.toggleButtons}
         buttons={[
           {
             value: 'sound',
@@ -46,7 +32,7 @@ export const MainScreen = () => {
             uncheckedColor: '#506962',
             style: {
               borderColor: '#F7EDE2',
-              borderBottomColor: value === 'sound' ? '#A9CDC4' : '#506962',
+              borderBottomColor: currentTab === 'sound' ? '#A9CDC4' : '#506962',
               borderBottomWidth: 5,
             },
           },
@@ -57,7 +43,7 @@ export const MainScreen = () => {
             uncheckedColor: '#506962',
             style: {
               borderColor: '#F7EDE2',
-              borderBottomColor: value === 'video' ? '#A9CDC4' : '#506962',
+              borderBottomColor: currentTab === 'video' ? '#A9CDC4' : '#506962',
               borderBottomWidth: 5,
             },
           },
@@ -66,8 +52,8 @@ export const MainScreen = () => {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}>
-        {meditations.map((el, idx) => (
-          <StyledCard
+        {meditations?.map((el, idx) => (
+          <MeditationCard
             key={idx}
             title={el.title}
             image={el.image}

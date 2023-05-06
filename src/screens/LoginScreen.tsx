@@ -1,10 +1,11 @@
 import React from 'react';
-import {ImageBackground, StyleSheet, Text, View} from 'react-native';
+import {Alert, ImageBackground, StyleSheet, Text, View} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
 import {Formik} from 'formik';
 import * as Yup from 'yup';
-import {firebase} from '../../firebase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {fireAuth} from '../lib/firebase';
+import {useSignInWithEmailAndPassword} from 'react-firebase-hooks/auth';
+import {NavigationScreenProps, Routes} from '../types';
 
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Required'),
@@ -13,50 +14,33 @@ const LoginSchema = Yup.object().shape({
     .max(20, 'Too Long')
     .required('Required'),
 });
-const storeData = async value => {
-  try {
-    await AsyncStorage.setItem('userId', value);
-  } catch (e) {
-    // saving error
-  }
-};
 
-export const LoginScreen = ({navigation}) => {
-  const handleLogin = ({
+export const LoginScreen = ({
+  navigation,
+}: NavigationScreenProps<Routes.Login>) => {
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(fireAuth);
+
+  const handleLogin = async ({
     email,
     password,
   }: {
     email: string;
     password: string;
   }) => {
-    firebase
-      .auth()
-      .signInWithEmailAndPassword(email, password)
-      .then(response => {
-        const uid = response.user.uid;
-        const usersRef = firebase.firestore().collection('users');
-        usersRef
-          .doc(uid)
-          .get()
-          .then(firestoreDocument => {
-            if (!firestoreDocument.exists) {
-              alert('User does not exist anymore.');
-              return;
-            }
+    const res = await signInWithEmailAndPassword(email, password);
+    if (!res) {
+      return;
+    }
 
-            const user = firestoreDocument.data();
-            // user && AsyncStorage.setItem('userId', user.id);
-            user && storeData(user.id);
-            navigation.navigate('HomeScreen', {user});
-          })
-          .catch(error => {
-            alert(error);
-          });
-      })
-      .catch(error => {
-        alert(error);
-      });
+    console.log(res.user.getIdToken(), res.user.refreshToken);
+
+    Alert.alert('Success ✅', 'You are logged in!', [{text: 'OK'}]);
+    navigation.reset({
+      routes: [{name: Routes.Home}],
+      index: 0,
+    });
   };
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -68,7 +52,7 @@ export const LoginScreen = ({navigation}) => {
           <Formik
             initialValues={{email: '', password: ''}}
             validationSchema={LoginSchema}
-            onSubmit={values => handleLogin(values)}>
+            onSubmit={handleLogin}>
             {({
               handleChange,
               handleBlur,
@@ -86,9 +70,10 @@ export const LoginScreen = ({navigation}) => {
                   outlineStyle={styles.inputOutline}
                   onChangeText={handleChange('email')}
                 />
-                {errors.email && touched.email ? (
+                {errors.email && touched.email && (
                   <Text style={styles.errorText}>{errors.email}</Text>
-                ) : null}
+                )}
+
                 <Text style={styles.label}>Password</Text>
                 <TextInput
                   mode="outlined"
@@ -98,9 +83,10 @@ export const LoginScreen = ({navigation}) => {
                   outlineStyle={styles.inputOutline}
                   onChangeText={handleChange('password')}
                 />
-                {errors.password && touched.password ? (
+                {errors.password && touched.password && (
                   <Text style={styles.errorText}>{errors.password}</Text>
-                ) : null}
+                )}
+
                 <Button
                   mode="contained"
                   buttonColor="#506962"
@@ -113,13 +99,14 @@ export const LoginScreen = ({navigation}) => {
               </View>
             )}
           </Formik>
+
           <Text style={styles.text}>or</Text>
           <Button
             mode="contained"
             textColor="#F7EDE2"
             style={styles.buttonSecondary}
             labelStyle={styles.buttonSecondaryLabel}
-            onPress={() => navigation.navigate('SignupScreen')}>
+            onPress={() => navigation.navigate(Routes.Signup)}>
             Sign up
           </Button>
         </View>
@@ -127,6 +114,7 @@ export const LoginScreen = ({navigation}) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
