@@ -9,10 +9,14 @@ import {
   TextInput,
 } from 'react-native-paper';
 import {Formik} from 'formik';
-import {useAuthState} from 'react-firebase-hooks/auth';
+import {
+  useAuthState,
+  useUpdateEmail,
+  useUpdatePassword,
+} from 'react-firebase-hooks/auth';
 import {fireAuth, fireStore} from '../../../lib/firebase';
 import {useDocument} from 'react-firebase-hooks/firestore';
-import {DocumentReference, doc} from 'firebase/firestore';
+import {DocumentReference, doc, setDoc} from 'firebase/firestore';
 import {User} from '../../../types';
 
 const ProfileSchema = Yup.object().shape({
@@ -29,24 +33,43 @@ export const Profile = () => {
   const [currentTab, setCurrentTab] = useState('statistics');
 
   const [currentUser, isCurrentUserLoading] = useAuthState(fireAuth);
+  const [updateEmail] = useUpdateEmail(fireAuth);
+  const [updatePassword] = useUpdatePassword(fireAuth);
+
   const [userDoc, isUserDataLoading] = useDocument<User>(
     doc(fireStore, 'users', currentUser?.uid ?? '') as DocumentReference<User>,
     {snapshotListenOptions: {includeMetadataChanges: true}},
   );
 
-  const updateUser = (values: {
+  const userData = userDoc?.data();
+  const updateUser = ({
+    email,
+    username,
+    password,
+  }: {
     email: string;
     username: string;
     password: string;
   }) => {
-    //
+    if (email !== currentUser?.email) {
+      updateEmail(email).catch(error => {
+        console.log(error);
+      });
+    }
+
+    if (password) {
+      updatePassword(password);
+    }
+
+    if (username !== userData?.username) {
+      setDoc(doc(fireStore, 'users', currentUser?.uid ?? ''), {username});
+    }
   };
 
   if (isCurrentUserLoading || isUserDataLoading) {
     return <Text>Loading...</Text>;
   }
 
-  const userData = userDoc?.data();
   if (!currentUser || !userDoc?.exists || !userData) {
     return <Text>Not logged in or profile was not created</Text>;
   }
