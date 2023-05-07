@@ -6,6 +6,11 @@ export type Meditation = {
   image: string;
 };
 
+export type User = {
+  uid: string;
+  username: string;
+};
+
 export enum Routes {
   Welcome = 'Welcome',
   Home = 'Home',

@@ -10,7 +10,10 @@ import {
 } from 'react-native-paper';
 import {Formik} from 'formik';
 import {useAuthState} from 'react-firebase-hooks/auth';
-import {fireAuth} from '../../../lib/firebase';
+import {fireAuth, fireStore} from '../../../lib/firebase';
+import {useDocument} from 'react-firebase-hooks/firestore';
+import {DocumentReference, doc} from 'firebase/firestore';
+import {User} from '../../../types';
 
 const ProfileSchema = Yup.object().shape({
   username: Yup.string().min(3, 'Too short'),
@@ -25,9 +28,11 @@ const ProfileSchema = Yup.object().shape({
 export const Profile = () => {
   const [currentTab, setCurrentTab] = useState('statistics');
 
-  const [user, loading] = useAuthState(fireAuth);
-
-  const [userInfo, setUserInfo] = useState({email: '', username: ''});
+  const [currentUser, isCurrentUserLoading] = useAuthState(fireAuth);
+  const [userDoc, isUserDataLoading] = useDocument<User>(
+    doc(fireStore, 'users', currentUser?.uid ?? '') as DocumentReference<User>,
+    {snapshotListenOptions: {includeMetadataChanges: true}},
+  );
 
   const updateUser = (values: {
     email: string;
@@ -37,8 +42,13 @@ export const Profile = () => {
     //
   };
 
-  if (loading || !user) {
+  if (isCurrentUserLoading || isUserDataLoading) {
     return <Text>Loading...</Text>;
+  }
+
+  const userData = userDoc?.data();
+  if (!currentUser || !userDoc?.exists || !userData) {
+    return <Text>Not logged in or profile was not created</Text>;
   }
 
   return (
@@ -47,10 +57,13 @@ export const Profile = () => {
         <Avatar.Image
           size={140}
           style={styles.avatar}
-          source={require('../../../../assets/images/flower.png')}
+          source={
+            currentUser.photoURL ??
+            require('../../../../assets/images/flower.png')
+          }
         />
         <Text variant="headlineMedium" style={styles.usernameTitle}>
-          {userInfo.username}
+          {userData.username}
         </Text>
         <SegmentedButtons
           value={currentTab}
@@ -87,8 +100,8 @@ export const Profile = () => {
           <Formik
             enableReinitialize
             initialValues={{
-              username: user.displayName ?? '',
-              email: user.email ?? '',
+              username: userData.username ?? '',
+              email: currentUser.email ?? '',
               password: '',
               confirmPassword: '',
             }}
@@ -112,9 +125,10 @@ export const Profile = () => {
                   onChangeText={handleChange('username')}
                   style={styles.input}
                 />
-                {errors.email && touched.email ? (
+                {errors.email && touched.email && (
                   <Text style={styles.errorText}>{errors.email}</Text>
-                ) : null}
+                )}
+
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                   mode="outlined"

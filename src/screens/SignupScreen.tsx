@@ -5,10 +5,7 @@ import {Button, TextInput} from 'react-native-paper';
 import * as Yup from 'yup';
 import {fireAuth, fireStore} from '../lib/firebase';
 import {NavigationScreenProps, Routes} from '../types';
-import {
-  useCreateUserWithEmailAndPassword,
-  useSignInWithEmailAndPassword,
-} from 'react-firebase-hooks/auth';
+import {useCreateUserWithEmailAndPassword} from 'react-firebase-hooks/auth';
 import {doc, setDoc} from 'firebase/firestore';
 
 const SignupSchema = Yup.object().shape({

@@ -32,8 +32,6 @@ export const LoginScreen = ({
       return;
     }
 
-    console.log(res.user.getIdToken(), res.user.refreshToken);
-
     Alert.alert('Success ✅', 'You are logged in!', [{text: 'OK'}]);
     navigation.reset({
       routes: [{name: Routes.Home}],
