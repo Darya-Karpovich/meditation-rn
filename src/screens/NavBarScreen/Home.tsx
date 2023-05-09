@@ -1,24 +1,64 @@
 import React, {useState} from 'react';
-import {ScrollView, StyleSheet, View} from 'react-native';
+import {SafeAreaView, ScrollView, StyleSheet} from 'react-native';
 import {SegmentedButtons, Text} from 'react-native-paper';
 import {MeditationCard} from '../../components/MeditationCard';
-import {useCollectionData} from 'react-firebase-hooks/firestore';
-import {fireStore} from '../../lib/firebase';
-import {Query, collection} from 'firebase/firestore';
-import {Meditation} from '../../types';
+import {useCollectionData, useDocument} from 'react-firebase-hooks/firestore';
+import {fireAuth, fireStore} from '../../lib/firebase';
+import {
+  DocumentData,
+  DocumentReference,
+  FirestoreDataConverter,
+  Query,
+  QueryDocumentSnapshot,
+  SnapshotOptions,
+  WithFieldValue,
+  collection,
+} from 'firebase/firestore';
+import {Meditation, User} from '../../types';
+import {getUserRefByUid} from '../../helpers/users';
+import {useAuthState} from 'react-firebase-hooks/auth';
+import {handleAddFavorite} from '../../helpers/meditations';
+
+export const meditationConverter: FirestoreDataConverter<Meditation> = {
+  toFirestore(meditation: WithFieldValue<Meditation>): DocumentData {
+    return {
+      title: meditation.title,
+      image: meditation.image,
+      duration: meditation.duration,
+    };
+  },
+  fromFirestore(
+    snapshot: QueryDocumentSnapshot,
+    options: SnapshotOptions,
+  ): Meditation {
+    const data = snapshot.data(options);
+    return {
+      title: data.title,
+      id: snapshot.id,
+      image: data.image,
+      duration: data.duration,
+    };
+  },
+};
 
 export const Home = () => {
   const [currentTab, setCurrentTab] = useState('sound');
+  const [currentUser] = useAuthState(fireAuth);
+  const [userDoc] = useDocument<User>(
+    getUserRefByUid(currentUser?.uid ?? '') as DocumentReference<User>,
+    {snapshotListenOptions: {includeMetadataChanges: true}},
+  );
+  const userFavorites = userDoc?.data()?.favorites;
 
   const [meditations] = useCollectionData<Meditation>(
     collection(
       fireStore,
       currentTab === 'sound' ? 'audio-meditations' : 'video-meditations',
-    ) as Query<Meditation>,
+    ).withConverter(meditationConverter) as Query<Meditation>,
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Meditations</Text>
       <SegmentedButtons
         value={currentTab}
@@ -54,18 +94,23 @@ export const Home = () => {
         showsVerticalScrollIndicator={false}>
         {meditations?.map((el, idx) => (
           <MeditationCard
+            isFavorite={userFavorites?.includes(el.id) || false}
+            handleAdd={() =>
+              handleAddFavorite({meditationId: el.id, currentUser})
+            }
             key={idx}
+            id={el.id}
             title={el.title}
             image={el.image}
             duration={el.duration}
           />
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -81,9 +126,5 @@ const styles = StyleSheet.create({
     fontSize: 48,
     lineHeight: 56,
     color: '#B75755',
-  },
-  toggleButtons: {
-    color: 'red',
-    borderBottomColor: 'red',
   },
 });

@@ -1,6 +1,7 @@
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 export type Meditation = {
+  id: string;
   title: string;
   duration: number;
   image: string;
@@ -9,6 +10,7 @@ export type Meditation = {
 export type User = {
   uid: string;
   username: string;
+  favorites: string[];
 };
 
 export enum Routes {

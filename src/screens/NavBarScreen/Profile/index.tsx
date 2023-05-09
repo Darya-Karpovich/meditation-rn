@@ -1,4 +1,11 @@
-import {ScrollView, StyleSheet, View} from 'react-native';
+import {
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import React, {useState} from 'react';
 import * as Yup from 'yup';
 import {
@@ -18,6 +25,7 @@ import {fireAuth, fireStore} from '../../../lib/firebase';
 import {useDocument} from 'react-firebase-hooks/firestore';
 import {DocumentReference, doc, setDoc} from 'firebase/firestore';
 import {User} from '../../../types';
+import {getUserRefByUid, modifyUser} from '../../../helpers/users';
 
 const ProfileSchema = Yup.object().shape({
   username: Yup.string().min(3, 'Too short'),
@@ -35,11 +43,19 @@ export const Profile = () => {
   const [currentUser, isCurrentUserLoading] = useAuthState(fireAuth);
   const [updateEmail] = useUpdateEmail(fireAuth);
   const [updatePassword] = useUpdatePassword(fireAuth);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [userDoc, isUserDataLoading] = useDocument<User>(
-    doc(fireStore, 'users', currentUser?.uid ?? '') as DocumentReference<User>,
+    getUserRefByUid(currentUser?.uid ?? '') as DocumentReference<User>,
     {snapshotListenOptions: {includeMetadataChanges: true}},
   );
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
 
   const userData = userDoc?.data();
   const updateUser = ({
@@ -47,6 +63,7 @@ export const Profile = () => {
     username,
     password,
   }: {
+    confirmPassword: string;
     email: string;
     username: string;
     password: string;
@@ -59,10 +76,11 @@ export const Profile = () => {
 
     if (password) {
       updatePassword(password);
+      Alert.alert('Success ✅', 'Your password was updated!', [{text: 'OK'}]);
     }
 
     if (username !== userData?.username) {
-      setDoc(doc(fireStore, 'users', currentUser?.uid ?? ''), {username});
+      modifyUser(currentUser.uid, {username});
     }
   };
 
@@ -75,8 +93,12 @@ export const Profile = () => {
   }
 
   return (
-    <ScrollView>
-      <View style={styles.container}>
+    <ScrollView
+      style={styles.scrollView}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+      <SafeAreaView style={styles.container}>
         <Avatar.Image
           size={140}
           style={styles.avatar}
@@ -129,7 +151,17 @@ export const Profile = () => {
               confirmPassword: '',
             }}
             validationSchema={ProfileSchema}
-            onSubmit={updateUser}>
+            onSubmit={(values, {resetForm}) => {
+              updateUser(values);
+              resetForm({
+                values: {
+                  username: userData.username ?? '',
+                  email: currentUser.email ?? '',
+                  password: '',
+                  confirmPassword: '',
+                },
+              });
+            }}>
             {({
               handleChange,
               handleBlur,
@@ -149,7 +181,7 @@ export const Profile = () => {
                   style={styles.input}
                 />
                 {errors.email && touched.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
+                  <Text style={styles.errorText}>{errors.username}</Text>
                 )}
 
                 <Text style={styles.label}>Email</Text>
@@ -204,12 +236,15 @@ export const Profile = () => {
             )}
           </Formik>
         </View>
-      </View>
+      </SafeAreaView>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    backgroundColor: '#F7EDE2',
+  },
   container: {
     flex: 1,
     alignItems: 'center',
