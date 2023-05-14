@@ -17,3 +17,9 @@ export const fireAuth = getAuth(fireApp);
 export const fireStore = getFirestore(fireApp);
 
 fireAuth.setPersistence(browserLocalPersistence);
+
+export enum Collections {
+  AudioMeditation = 'audio-meditations',
+  Users = 'users',
+  VideoMeditations = 'video-meditations',
+}

@@ -1,11 +1,12 @@
 import React from 'react';
 import {SegmentedButtons} from 'react-native-paper';
+
 export const ToggleTabs = ({
   currentTab,
   setCurrentTab,
 }: {
   currentTab: string;
-  setCurrentTab: () => void;
+  setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   return (
     <SegmentedButtons

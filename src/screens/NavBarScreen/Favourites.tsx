@@ -10,7 +10,7 @@ import {useAuthState} from 'react-firebase-hooks/auth';
 import {meditationConverter, styles} from './Home';
 import {ToggleTabs} from '../../components/ToggleTabs';
 import {MeditationCard} from '../../components/MeditationCard';
-import {handleAddFavorite} from '../../helpers/meditations';
+import {addMeditationToFavourites} from '../../helpers/meditations';
 
 export function Favourites() {
   const [currentTab, setCurrentTab] = useState('sound');
@@ -38,10 +38,11 @@ export function Favourites() {
             userFavorites?.includes(el.id) && (
               <MeditationCard
                 isFavorite={userFavorites?.includes(el.id) || false}
-                handleAdd={() =>
-                  handleAddFavorite({meditationId: el.id, currentUser})
+                onLike={() =>
+                  addMeditationToFavourites({meditationId: el.id, currentUser})
                 }
                 key={idx}
+                url="asdasd"
                 id={el.id}
                 title={el.title}
                 image={el.image}
@@ -53,15 +54,3 @@ export function Favourites() {
     </SafeAreaView>
   );
 }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     backgroundColor: '#F7EDE2',
-//   },
-//   scrollView: {
-//     width: '80%',
-//   },
-// });

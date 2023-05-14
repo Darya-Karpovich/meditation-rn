@@ -5,6 +5,8 @@ export type Meditation = {
   title: string;
   duration: number;
   image: string;
+  url: string;
+  createdAt: number;
 };
 
 export type User = {
@@ -18,6 +20,7 @@ export enum Routes {
   Home = 'Home',
   Login = 'Login',
   Signup = 'Signup',
+  Meditation = 'Meditation',
 }
 
 export type RootStackParamList = {
@@ -25,6 +28,7 @@ export type RootStackParamList = {
   [Routes.Welcome]: undefined;
   [Routes.Login]: undefined;
   [Routes.Signup]: undefined;
+  [Routes.Meditation]: {id: string; nextId?: string; prevId?: string};
 };
 
 export type NavigationScreenProps<T extends keyof RootStackParamList> =

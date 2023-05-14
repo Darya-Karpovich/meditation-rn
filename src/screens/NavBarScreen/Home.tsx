@@ -13,11 +13,14 @@ import {
   SnapshotOptions,
   WithFieldValue,
   collection,
+  orderBy,
+  query,
 } from 'firebase/firestore';
-import {Meditation, User} from '../../types';
+import {Meditation, NavigationScreenProps, Routes, User} from '../../types';
 import {getUserRefByUid} from '../../helpers/users';
 import {useAuthState} from 'react-firebase-hooks/auth';
-import {handleAddFavorite} from '../../helpers/meditations';
+import {addMeditationToFavourites} from '../../helpers/meditations';
+import {MeditationSortBy} from '../../lib/consts';
 
 export const meditationConverter: FirestoreDataConverter<Meditation> = {
   toFirestore(meditation: WithFieldValue<Meditation>): DocumentData {
@@ -37,11 +40,13 @@ export const meditationConverter: FirestoreDataConverter<Meditation> = {
       id: snapshot.id,
       image: data.image,
       duration: data.duration,
+      url: data.content,
+      createdAt: data.createdAt,
     };
   },
 };
 
-export const Home = () => {
+export const Home = ({navigation}: NavigationScreenProps<Routes.Home>) => {
   const [currentTab, setCurrentTab] = useState('sound');
   const [currentUser] = useAuthState(fireAuth);
   const [userDoc] = useDocument<User>(
@@ -51,11 +56,18 @@ export const Home = () => {
   const userFavorites = userDoc?.data()?.favorites;
 
   const [meditations] = useCollectionData<Meditation>(
-    collection(
-      fireStore,
-      currentTab === 'sound' ? 'audio-meditations' : 'video-meditations',
+    query(
+      collection(
+        fireStore,
+        currentTab === 'sound' ? 'audio-meditations' : 'video-meditations',
+      ),
+      orderBy(MeditationSortBy.CreatedAt, 'desc'),
     ).withConverter(meditationConverter) as Query<Meditation>,
   );
+
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -92,17 +104,24 @@ export const Home = () => {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}>
-        {meditations?.map((el, idx) => (
+        {meditations?.map((meditation, idx, arrayRef) => (
           <MeditationCard
-            isFavorite={userFavorites?.includes(el.id) || false}
-            handleAdd={() =>
-              handleAddFavorite({meditationId: el.id, currentUser})
+            isFavorite={userFavorites?.includes(meditation.id) || false}
+            onLike={() =>
+              addMeditationToFavourites({
+                meditationId: meditation.id,
+                currentUser,
+              })
             }
+            onClick={() => {
+              navigation.navigate(Routes.Meditation, {
+                id: meditation.id,
+                prevId: arrayRef[(idx - 1) % arrayRef.length].id,
+                nextId: arrayRef[(idx + 1) % arrayRef.length].id,
+              });
+            }}
+            meditation={meditation}
             key={idx}
-            id={el.id}
-            title={el.title}
-            image={el.image}
-            duration={el.duration}
           />
         ))}
       </ScrollView>

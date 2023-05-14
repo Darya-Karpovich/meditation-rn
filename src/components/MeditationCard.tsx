@@ -3,14 +3,21 @@ import {Image, StyleSheet} from 'react-native';
 import {Button, Card} from 'react-native-paper';
 import {Meditation} from '../types';
 
+type Props = {
+  meditation: Meditation;
+  onClick: () => void;
+  onLike: (id: string) => void;
+  isFavorite: boolean;
+};
+
 export const MeditationCard = ({
-  title,
-  image,
-  duration,
-  id,
+  onClick,
+  meditation,
   isFavorite,
-  handleAdd,
-}: Meditation & {handleAdd: (id: string) => void; isFavorite: boolean}) => {
+  onLike: handleAdd,
+}: Props) => {
+  const {id, duration, title, image} = meditation;
+
   const hours = Math.floor(duration / 3600);
   const minutes = Math.floor(duration / 60);
   const seconds = duration - hours * 3600 - minutes * 60;
@@ -18,9 +25,9 @@ export const MeditationCard = ({
     hours > 0
       ? hours + 'h' + minutes + 'm ' + seconds + 's'
       : minutes + 'm ' + seconds + 's';
-  console.log('AAAAAAAAAAAAA', isFavorite);
+
   return (
-    <Card style={styles.container}>
+    <Card style={styles.container} onPress={onClick}>
       <Card.Title
         style={styles.title}
         titleStyle={styles.titleText}
@@ -31,11 +38,6 @@ export const MeditationCard = ({
           mode="text"
           style={styles.favoriteIcon}
           onPress={() => handleAdd(id)}>
-          {/* <Image
-            source={require(`../../assets/images/${
-              isFavorite ? 'heart-filled' : 'heart'
-            }.png`)}
-          /> */}
           <Image
             source={
               isFavorite
